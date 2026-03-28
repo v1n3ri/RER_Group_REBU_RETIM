@@ -1,11 +1,12 @@
 """Constants for the Retim Timisoara integration."""
 import logging
-
+from homeassistant.const import Platform
 DOMAIN = "RER_Group"
+PLATFORMS = [Platform.SENSOR]
 CONF_DOMAIN = "domain_url"
 
 SUPPORTED_DOMAINS = {
-    "Retim Timișoara": "https://cp.retim.ro/api",
+    "RETIM": "https://cp.retim.ro/api",
     "REBU": "https://cp.rebu.ro/api",
     "RER Vest": "https://cp.rervest.ro/api",
     "RER Sud": "https://cp.rervest.ro/api",
@@ -20,11 +21,11 @@ CONF_EMAIL = "email"
 CONF_PASSWORD = "password"
 
 # Attribution to show in the UI
-ATTRIBUTION = "Data provided by Retim Timisoara"
+ATTRIBUTION = "Data provided by RER_Group"
 
 # Refresh interval
 # This can be used in __init__.py for the coordinator
-SCAN_INTERVAL_HOURS = 6
+SCAN_INTERVAL_HOURS = 1
 
 # Logger
 _LOGGER = logging.getLogger(__package__)

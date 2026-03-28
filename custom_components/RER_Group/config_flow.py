@@ -22,9 +22,11 @@ DATA_SCHEMA = vol.Schema({
 })
 
 class RetimConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Retim Timisoara."""
-
     VERSION = 1
+
+    async def async_step_reauth(self, user_data):
+        """Handle re-auth if credentials expire."""
+        return await self.async_step_user()
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
