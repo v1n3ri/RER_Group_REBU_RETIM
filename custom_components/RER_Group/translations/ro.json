@@ -2,28 +2,28 @@
   "config": {
     "step": {
       "user": {
-        "title": "Retim Timișoara Login",
-        "description": "Please enter the email and password you use for the Retim 'Contul Meu' portal.",
+        "title": "Autentificare RER Group",
+        "description": "Introduceți datele de acces folosite în portalul furnizorului dumneavoastră (Retim, REBU, etc.).",
         "data": {
-            "domain_url": "Service Provider",
-            "email": "Email Address",
-            "password": "Password"
-                }
+          "domain_url": "Furnizor Servicii",
+          "email": "Adresă Email",
+          "password": "Parolă"
+        }
       }
     },
     "error": {
-      "invalid_auth": "Invalid email or password. Please check your credentials.",
-      "cannot_connect": "Failed to connect to Retim servers. Please verify your internet connection.",
-      "unknown": "An unexpected error occurred. Please check the Home Assistant logs."
+      "invalid_auth": "Email sau parolă incorectă.",
+      "cannot_connect": "Eroare de conexiune la serverele RER. Verificați conexiunea la internet.",
+      "unknown": "A apărut o eroare neașteptată. Verificați log-urile."
     },
     "abort": {
-      "already_configured": "This Retim account is already integrated in Home Assistant."
+      "already_configured": "Acest cont este deja configurat în Home Assistant."
     }
   },
   "entity": {
     "sensor": {
       "account_balance": {
-        "name": "Account Balance"
+        "name": "Sold Total"
       }
     }
   }
