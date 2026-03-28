@@ -11,8 +11,29 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Retim sensors based on a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     
-    # We only initialize the Balance sensor now
-    async_add_entities([RetimBalanceSensor(coordinator)])
+    # Get the first batch of data to discover available sensors
+    data = coordinator.data
+    sensors = []
+    
+    # Static sensor: Account Balance
+    sensors.append(RetimBalanceSensor(coordinator))
+    
+    # Dynamic sensors from user data
+    if "user" in data and isinstance(data["user"], dict):
+        for key, value in data["user"].items():
+            if isinstance(value, (int, float, str, bool)):
+                sensors.append(DynamicUserSensor(coordinator, key, value))
+    
+    # Dynamic sensors from invoices
+    if "invoices" in data and isinstance(data["invoices"], dict):
+        invoices_data = data["invoices"].get("data", [])
+        if invoices_data and isinstance(invoices_data, list) and invoices_data:
+            first_invoice = invoices_data[0]
+            for key in first_invoice.keys():
+                if key not in ["id", "pdf"]:  # Skip IDs and non-numeric data
+                    sensors.append(DynamicInvoiceSensor(coordinator, key))
+    
+    async_add_entities(sensors)
 
 class RetimBaseSensor(CoordinatorEntity, SensorEntity):
     """Common properties for all Retim sensors."""
@@ -21,7 +42,6 @@ class RetimBaseSensor(CoordinatorEntity, SensorEntity):
 
     def __init__(self, coordinator):
         super().__init__(coordinator)
-        # Unique ID allows for entity renaming in the HA UI
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{self.__class__.__name__}"
 
 class RetimBalanceSensor(RetimBaseSensor):
@@ -39,7 +59,6 @@ class RetimBalanceSensor(RetimBaseSensor):
         if not invoices:
             return 0.0
             
-        # Checks both the 'unpaid' boolean and the 'status' field for reliability
         total_due = sum(
             float(inv.get("amount", 0)) 
             for inv in invoices 
@@ -49,15 +68,13 @@ class RetimBalanceSensor(RetimBaseSensor):
 
     @property
     def extra_state_attributes(self):
-        """Add metadata about the last invoice to the sensor attributes."""
+        """Add metadata about the last invoice."""
         data_wrapper = self.coordinator.data.get("invoices", {})
         invoices = data_wrapper.get("data", [])
         
         if not invoices:
             return {}
 
-        # Sort by date to find the most recent invoice
-        # Invoices use format "DD.MM.YYYY" in the API
         last_invoice = invoices[0] if invoices else {}
         
         return {
@@ -65,3 +82,34 @@ class RetimBalanceSensor(RetimBaseSensor):
             "due_date": last_invoice.get("dueDate"),
             "invoice_number": last_invoice.get("number")
         }
+
+class DynamicUserSensor(RetimBaseSensor):
+    """Dynamically created sensor for user data fields."""
+    
+    def __init__(self, coordinator, field_name, initial_value):
+        super().__init__(coordinator)
+        self.field_name = field_name
+        self._attr_name = field_name.replace("_", " ").title()
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_user_{field_name}"
+
+    @property
+    def native_value(self):
+        user_data = self.coordinator.data.get("user", {})
+        return user_data.get(self.field_name)
+
+class DynamicInvoiceSensor(RetimBaseSensor):
+    """Dynamically created sensor for invoice aggregate data."""
+    
+    def __init__(self, coordinator, field_name):
+        super().__init__(coordinator)
+        self.field_name = field_name
+        self._attr_name = f"Invoice {field_name.replace('_', ' ').title()}"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_invoice_{field_name}"
+
+    @property
+    def native_value(self):
+        invoices = self.coordinator.data.get("invoices", {}).get("data", [])
+        if not invoices:
+            return None
+        # Return the first invoice's value for this field
+        return invoices[0].get(self.field_name)
