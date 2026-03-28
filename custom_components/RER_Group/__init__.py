@@ -17,18 +17,26 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Retim Timisoara from a config entry."""
+    
+    # Extract stored credentials from config entry
+    email = entry.data[CONF_EMAIL]
+    password = entry.data[CONF_PASSWORD]
+    domain_url = entry.data[CONF_DOMAIN]  # This is the selected domain URL
+    
     session = async_get_clientsession(hass)
-    api = RetimAPI(
-    entry.data[CONF_EMAIL], 
-    entry.data[CONF_PASSWORD], 
-    session, 
-    entry.data[CONF_DOMAIN] # Pass the selected URL
-)
+    
+    # Create API instance with stored credentials
+    api = RetimAPI(email, password, session, domain_url)
 
     async def async_update_data():
         """Fetch data from Retim API."""
         try:
-            # This calls the fetch_data method we defined in api.py
+            # Login on each update to ensure valid session
+            login_success = await api.login()
+            if not login_success:
+                raise UpdateFailed("Failed to authenticate with Retim API")
+            
+            # Now fetch the data
             return await api.get_data()
         except Exception as err:
             raise UpdateFailed(f"Error communicating with API: {err}")
@@ -39,7 +47,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER,
         name="RER Group Data",
         update_method=async_update_data,
-        # We check every 6 hours; trash schedules and bills don't change fast
         update_interval=timedelta(hours=6),
     )
 
