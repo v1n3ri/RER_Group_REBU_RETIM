@@ -1,0 +1,10 @@
+{
+  "domain": "retim_timisoara",
+  "name": "Retim Timisoara",
+  "documentation": "https://github.com/yourusername/ha-retim",
+  "dependencies": [],
+  "codeowners": ["@v1n3ri"],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "version": "1.0.0"
+}

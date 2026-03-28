@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Retim Timișoara Login",
+        "description": "Please enter the email and password you use for the Retim 'Contul Meu' portal.",
+        "data": {
+            "domain_url": "Service Provider",
+            "email": "Email Address",
+            "password": "Password"
+                }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password. Please check your credentials.",
+      "cannot_connect": "Failed to connect to Retim servers. Please verify your internet connection.",
+      "unknown": "An unexpected error occurred. Please check the Home Assistant logs."
+    },
+    "abort": {
+      "already_configured": "This Retim account is already integrated in Home Assistant."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "account_balance": {
+        "name": "Account Balance"
+      }
+    }
+  }
+}
