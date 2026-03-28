@@ -20,10 +20,15 @@ class RetimAPI:
             async with self.session.post(url, json=payload) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    # Try to extract token (adjust based on your API response)
+                    # Extract token from response
                     self.auth_token = data.get("token") or data.get("access_token")
-                    if self.auth_token:
-                        self.headers["Authorization"] = f"Bearer {self.auth_token}"
+                    
+                    # Validate that we got a token
+                    if not self.auth_token:
+                        _LOGGER.error("Login response did not contain a valid token")
+                        return False
+                    
+                    self.headers["Authorization"] = f"Bearer {self.auth_token}"
                     _LOGGER.debug("Successfully authenticated with Retim API")
                     return True
                 else:
@@ -48,14 +53,23 @@ class RetimAPI:
                         f"{self.base_url}/invoices", 
                         headers=self.headers
                     ) as retry_resp:
+                        if retry_resp.status != 200:
+                            _LOGGER.error("Failed to fetch invoices after re-authentication: %s", retry_resp.status)
+                            raise Exception(f"Invoices API returned status {retry_resp.status}")
                         invoices = await retry_resp.json()
                 else:
+                    if resp.status != 200:
+                        _LOGGER.error("Failed to fetch invoices: %s", resp.status)
+                        raise Exception(f"Invoices API returned status {resp.status}")
                     invoices = await resp.json()
             
             async with self.session.get(
                 f"{self.base_url}/user", 
                 headers=self.headers
             ) as resp:
+                if resp.status != 200:
+                    _LOGGER.error("Failed to fetch user info: %s", resp.status)
+                    raise Exception(f"User API returned status {resp.status}")
                 user_info = await resp.json()
 
             return {
