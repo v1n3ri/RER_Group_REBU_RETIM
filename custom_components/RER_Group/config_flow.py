@@ -2,11 +2,10 @@ import logging
 import voluptuous as vol
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, SelectSelectorMode
 from homeassistant import config_entries
-from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, CONF_DOMAIN, SUPPORTED_DOMAINS
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import RetimAPI
-from .const import DOMAIN
+from .const import DOMAIN, CONF_DOMAIN, CONF_EMAIL, CONF_PASSWORD, SUPPORTED_DOMAINS
 
 _LOGGER = logging.getLogger(__name__)
 

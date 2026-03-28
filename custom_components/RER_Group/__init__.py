@@ -8,7 +8,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import RetimAPI
-from .const import CONF_EMAIL, CONF_PASSWORD, CONF_DOMAIN # Ensure CONF_DOMAIN is imported
+from .const import DOMAIN, CONF_EMAIL, CONF_PASSWORD, CONF_DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
