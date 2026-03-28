@@ -1,6 +1,7 @@
 """Constants for the Retim Timisoara integration."""
 import logging
 
+DOMAIN = "RER_Group"
 CONF_DOMAIN = "domain_url"
 
 SUPPORTED_DOMAINS = {
