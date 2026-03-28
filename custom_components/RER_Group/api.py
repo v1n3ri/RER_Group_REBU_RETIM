@@ -11,9 +11,10 @@ class RetimAPI:
         self.session = session
         self.base_url = base_url
         self.auth_token = None
+        self.headers = {"Accept": "application/json"} # Aceasta lipsea
 
     async def login(self) -> bool:
-        """Attempt to login and store the bearer token in the session."""
+        """Autentificare și salvare token."""
         url = f"{self.base_url}/auth/login"
         payload = {"email": self.email, "password": self.password}
         try:
@@ -22,67 +23,41 @@ class RetimAPI:
                     data = await resp.json()
                     self.auth_token = data.get("token") or data.get("access_token")
                     if self.auth_token:
-                        # Apply token to all future session requests
-                        self.session._default_headers.update(
-                            {"Authorization": f"Bearer {self.auth_token}"}
-                        )
-                    _LOGGER.debug("Successfully authenticated with Retim API")
+                        self.headers["Authorization"] = f"Bearer {self.auth_token}"
+                        # Actualizăm și sesiunea globală pentru siguranță
+                        self.session._default_headers.update(self.headers)
                     return True
-                _LOGGER.error("Login failed: %s", resp.status)
+                _LOGGER.error("Login eșuat: %s", resp.status)
                 return False
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            _LOGGER.error("Connection error during login: %s", err)
+            _LOGGER.error("Eroare de conexiune la login: %s", err)
             return False
 
-    async def _request(self, method, endpoint):
-        """Internal helper to handle requests and auto-retry on 401."""
-        url = f"{self.base_url}/{endpoint}"
-        
-        async with self.session.request(method, url) as resp:
-            if resp.status == 401:
-                _LOGGER.warning("Token expired, attempting re-auth")
-                if await self.login():
-                    async with self.session.request(method, url) as retry_resp:
-                        return await retry_resp.json()
-            return await resp.json()
-
     async def get_data(self):
-        """Fetch all data using the authenticated session."""
+        """Preia facturile, datele de utilizator și clienții."""
         try:
-            # Fetch invoices
-            async with self.session.get(
-                f"{self.base_url}/invoices", 
-                headers=self.headers
-            ) as resp:
-                if resp.status == 401:
-                    await self.login()
-                    async with self.session.get(
-                        f"{self.base_url}/invoices", 
-                        headers=self.headers
-                    ) as retry_resp:
-                        invoices = await retry_resp.json()
-                else:
-                    invoices = await resp.json()
-            
-            # Fetch user info
-            async with self.session.get(
-                f"{self.base_url}/user", 
-                headers=self.headers
-            ) as resp:
-                user_info = await resp.json()
+            # Reutilizăm logica de login dacă token-ul lipsește
+            if not self.auth_token:
+                await self.login()
 
-            # NEW: Fetch customers info
-            async with self.session.get(
-                f"{self.base_url}/customers", 
-                headers=self.headers
-            ) as resp:
-                customers_info = await resp.json()
+            # Helper pentru request-uri
+            async def fetch(endpoint):
+                async with self.session.get(f"{self.base_url}/{endpoint}", headers=self.headers) as resp:
+                    if resp.status == 401: # Token expirat
+                        await self.login()
+                        async with self.session.get(f"{self.base_url}/{endpoint}", headers=self.headers) as retry_resp:
+                            return await retry_resp.json()
+                    return await resp.json()
+
+            invoices = await fetch("invoices")
+            user_info = await fetch("user")
+            customers = await fetch("customers")
 
             return {
                 "user": user_info,
                 "invoices": invoices,
-                "customers": customers_info  # Added this field
+                "customers": customers
             }
         except Exception as err:
-            _LOGGER.error("Error fetching data: %s", err)
+            _LOGGER.error("Eroare la preluarea datelor: %s", err)
             raise
