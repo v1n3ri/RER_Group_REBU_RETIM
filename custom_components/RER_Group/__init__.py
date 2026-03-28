@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name="Retim Data",
+        name="RER Group Data",
         update_method=async_update_data,
         # We check every 6 hours; trash schedules and bills don't change fast
         update_interval=timedelta(hours=6),

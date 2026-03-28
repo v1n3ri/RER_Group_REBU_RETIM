@@ -1,7 +1,7 @@
 {
-  "domain": "retim_timisoara",
-  "name": "Retim Timisoara",
-  "documentation": "https://github.com/yourusername/ha-retim",
+  "domain": "RER_Group",
+  "name": "RER Group REBU RETIM etc",
+  "documentation": "https://github.com/v1n3ri/RER_Group_REBU_RETIM",
   "dependencies": [],
   "codeowners": ["@v1n3ri"],
   "config_flow": true,
