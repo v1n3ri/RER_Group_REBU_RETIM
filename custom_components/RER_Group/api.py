@@ -47,10 +47,12 @@ class RetimAPI:
             return await resp.json()
 
     async def get_data(self):
-        """Fetch user profile and invoices."""
+        """Fetch all data using the authenticated session."""
+        # Ensure these endpoints match your previous working version exactly
         user_info = await self._request("GET", "user")
         invoices = await self._request("GET", "invoices")
+
         return {
             "user": user_info,
-            "invoices": invoices
+            "invoices": invoices  # This should contain the 'data' key used in sensor.py
         }
