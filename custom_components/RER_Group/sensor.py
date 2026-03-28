@@ -13,30 +13,36 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Retim sensors based on a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     data = coordinator.data
-    
-    if not data:
-        return
-
     sensors = []
     
-    # 1. Main Balance Sensor
-    sensors.append(RetimBalanceSensor(coordinator, entry))
+    # Static sensor: Account Balance
+    sensors.append(RetimBalanceSensor(coordinator))
     
-    # 2. Dynamic User Details (Marked as Diagnostic)
-    user_info = data.get("user", {})
-    if isinstance(user_info, dict):
-        for key, value in user_info.items():
-            if isinstance(value, (int, float, str, bool)) and key not in ["id"]:
-                sensors.append(DynamicUserSensor(coordinator, entry, key))
+    # Dynamic sensors from user data
+    if "user" in data and isinstance(data["user"], dict):
+        for key, value in data["user"].items():
+            if isinstance(value, (int, float, str, bool)):
+                sensors.append(DynamicUserSensor(coordinator, key, value))
     
-    # 3. Dynamic Invoice Sensors (Tracking the latest invoice)
-    invoices_wrapper = data.get("invoices", {})
-    invoices_list = invoices_wrapper.get("data", [])
-    if isinstance(invoices_list, list) and len(invoices_list) > 0:
-        first_invoice = invoices_list[0]
-        for key in first_invoice.keys():
-            if key not in ["id", "pdf", "unpaid", "status"]:
-                sensors.append(DynamicInvoiceSensor(coordinator, entry, key))
+    # Dynamic sensors from invoices
+    if "invoices" in data and isinstance(data["invoices"], dict):
+        invoices_data = data["invoices"].get("data", [])
+        if invoices_data and isinstance(invoices_data, list):
+            first_invoice = invoices_data[0]
+            for key in first_invoice.keys():
+                if key not in ["id", "pdf"]:
+                    sensors.append(DynamicInvoiceSensor(coordinator, key))
+
+    # NEW: Dynamic sensors from customers data
+    if "customers" in data and isinstance(data["customers"], dict):
+        customers_list = data["customers"].get("data", [])
+        if customers_list and isinstance(customers_list, list):
+            # We track the primary account details (first item in data list)
+            first_customer = customers_list[0]
+            for key, value in first_customer.items():
+                # Avoid complex structures like 'addresses' for simple sensors
+                if isinstance(value, (int, float, str, bool)) and key != "id":
+                    sensors.append(DynamicCustomerSensor(coordinator, key))
     
     async_add_entities(sensors)
 
@@ -106,3 +112,20 @@ class DynamicInvoiceSensor(RetimBaseSensor):
         if not invoices:
             return None
         return invoices[0].get(self.field_name)
+
+# NEW: Customer sensor class
+class DynamicCustomerSensor(RetimBaseSensor):
+    """Dynamically created sensor for customer data fields."""
+    
+    def __init__(self, coordinator, field_name):
+        super().__init__(coordinator)
+        self.field_name = field_name
+        self._attr_name = f"Customer {field_name.replace('_', ' ').title()}"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_customer_{field_name}"
+
+    @property
+    def native_value(self):
+        customers = self.coordinator.data.get("customers", {}).get("data", [])
+        if not customers:
+            return None
+        return customers[0].get(self.field_name)

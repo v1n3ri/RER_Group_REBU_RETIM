@@ -48,11 +48,41 @@ class RetimAPI:
 
     async def get_data(self):
         """Fetch all data using the authenticated session."""
-        # Ensure these endpoints match your previous working version exactly
-        user_info = await self._request("GET", "user")
-        invoices = await self._request("GET", "invoices")
+        try:
+            # Fetch invoices
+            async with self.session.get(
+                f"{self.base_url}/invoices", 
+                headers=self.headers
+            ) as resp:
+                if resp.status == 401:
+                    await self.login()
+                    async with self.session.get(
+                        f"{self.base_url}/invoices", 
+                        headers=self.headers
+                    ) as retry_resp:
+                        invoices = await retry_resp.json()
+                else:
+                    invoices = await resp.json()
+            
+            # Fetch user info
+            async with self.session.get(
+                f"{self.base_url}/user", 
+                headers=self.headers
+            ) as resp:
+                user_info = await resp.json()
 
-        return {
-            "user": user_info,
-            "invoices": invoices  # This should contain the 'data' key used in sensor.py
-        }
+            # NEW: Fetch customers info
+            async with self.session.get(
+                f"{self.base_url}/customers", 
+                headers=self.headers
+            ) as resp:
+                customers_info = await resp.json()
+
+            return {
+                "user": user_info,
+                "invoices": invoices,
+                "customers": customers_info  # Added this field
+            }
+        except Exception as err:
+            _LOGGER.error("Error fetching data: %s", err)
+            raise
