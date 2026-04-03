@@ -1,10 +1,10 @@
 {
   "domain": "RER_Group",
-  "name": "RER Group REBU RETIM etc",
+  "name": "RER Group (RETIM, REBU, RER)",
   "documentation": "https://github.com/v1n3ri/RER_Group_REBU_RETIM",
   "dependencies": [],
   "codeowners": ["@v1n3ri"],
   "config_flow": true,
   "iot_class": "cloud_polling",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

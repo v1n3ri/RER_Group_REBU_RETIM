@@ -54,9 +54,9 @@ class RetimAPI:
             customers = await fetch("customers")
 
             return {
-                "user": user_info,
-                "invoices": invoices,
-                "customers": customers
+            "user": user_info,
+            "invoices": invoices, # Acesta trebuie să fie răspunsul brut de la /api/invoices
+            "customers": customers
             }
         except Exception as err:
             _LOGGER.error("Eroare la preluarea datelor: %s", err)
